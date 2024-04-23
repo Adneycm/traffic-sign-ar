@@ -1,4 +1,5 @@
 import cv2 as cv
+import numpy as np
 import shutil
 import os
 from PIL import Image
@@ -30,10 +31,13 @@ def resize_image(image):
 def overlay_transparent(img_front, img_back):
     img_back_copy = img_back.copy()
 
-    for i in range(img_back_copy.shape[0]):
-        for j in range(img_back_copy.shape[1]):
-            if img_front[i][j][3] != 0: # Checking if the alpha(transparent) chanel is not transparent
-                img_back_copy[i][j] = img_front[i][j][:3]
+    # for i in range(img_back_copy.shape[0]):
+    #     for j in range(img_back_copy.shape[1]):
+    #         if img_front[i][j][3] != 0: # Checking if the alpha(transparent) chanel is not transparent
+    #             img_back_copy[i][j] = img_front[i][j][:3]
+
+    nonzero_alpha_indices = np.where(img_front[:, :, 3] != 0)
+    img_back_copy[nonzero_alpha_indices[0], nonzero_alpha_indices[1]] = img_front[nonzero_alpha_indices[0], nonzero_alpha_indices[1], :3]
     return img_back_copy
 
 def main():
