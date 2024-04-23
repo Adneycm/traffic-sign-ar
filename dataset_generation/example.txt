@@ -1,0 +1,30 @@
+Install environment
+-------------------
+python -m venv .venv
+
+
+Activate environment (Windows)
+------------------------------
+.venv\Scripts\activate
+
+
+Activate environment (macOS/Linux)
+----------------------------------
+source .venv/bin/activate
+
+
+Install basic dependencies
+--------------------------
+pip install --upgrade pip
+pip install opencv-python icrawler six Pillow requests bs4 lxml
+
+
+Run scripts
+-----------
+python crawl.py
+python label.py
+
+
+Documentation
+-------------
+https://icrawler.readthedocs.io/en/latest/builtin.html
