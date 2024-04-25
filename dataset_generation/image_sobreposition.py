@@ -41,6 +41,8 @@ def overlay_transparent(img_front, img_back):
     return img_back_copy
 
 def main():
+    output_img_number = 0
+
     cv.namedWindow(WINDOW_NAME)
 
     output_dir = os.path.join(OUTPUT_BASE)
@@ -66,29 +68,27 @@ def main():
             
 
             overlay = overlay_transparent(resized_cover, resized_traffic_sign)
-            cv.imshow(WINDOW_NAME, overlay)
-            cv.waitKey(0)
-            cv.destroyAllWindows()
             
-        break
 
-        # cv.imshow(WINDOW_NAME, resized_image_traffic_sign)
+            cv.imshow(WINDOW_NAME, overlay)
 
-        # while True:
-        #     if cv.getWindowProperty(WINDOW_NAME, cv.WND_PROP_VISIBLE):
-        #         key = cv.waitKey(1000) # um segundo
-        #     else:
-        #         key = ord('q')
+            while True:
+                if cv.getWindowProperty(WINDOW_NAME, cv.WND_PROP_VISIBLE):
+                    key = cv.waitKey(1000) # um segundo
+                else:
+                    key = ord('q')
 
-        #     if key != -1:
-        #         break
+                if key != -1:
+                    break
 
-        # if key == ord('q'):
-        #     break
+            if key == ord('q'):
+                break
 
-        # if key == ord('y'):
-        #     output_path = os.path.join(output_dir, name)
-        #     shutil.copy(input_path, output_path)
+            if key == ord('y'):
+                output_path = os.path.join(output_dir, f"{output_img_number:06d}.png")
+                cv.imwrite(output_path, overlay)
+                output_img_number +=1
+                # shutil.copy(input_path, output_path)
 
     cv.destroyWindow(WINDOW_NAME)
     return 0
