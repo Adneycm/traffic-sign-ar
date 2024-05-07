@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const VideoPlayer = ({ videoUrl }) => {
+const VideoDisplay = ({ videoUrl }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -50,4 +50,4 @@ const VideoPlayer = ({ videoUrl }) => {
   );
 };
 
-export default VideoPlayer;
+export default VideoDisplay;
