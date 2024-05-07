@@ -9,37 +9,6 @@ import numpy as np
 # Load the model
 model = YOLO('./model/best.pt')  
 
-def resize_image(image, width, height):
-    img_pil = Image.fromarray(image)
-    img_pil_resized = img_pil.resize((width, height), Image.Resampling.LANCZOS)  # Updated for newer Pillow versions
-    return np.array(img_pil_resized)
-
-def overlay_transparent(front_img, back_img, x_offset, y_offset):
-    # Get the dimensions of the foreground image
-    h, w = front_img.shape[:2]
-
-    # Ensure the foreground image fits within the background image
-    if y_offset + h > back_img.shape[0] or x_offset + w > back_img.shape[1]:
-        raise ValueError("The overlay image is too large for the background image at given position")
-
-    # Extract the region of interest (ROI) from the background image where the foreground will be placed
-    roi = back_img[y_offset:y_offset+h, x_offset:x_offset+w]
-
-    # Extract the alpha mask of the foreground image and create the inverse mask
-    alpha_foreground = front_img[:, :, 3] / 255.0
-    alpha_background = 1.0 - alpha_foreground
-
-    # For each channel (RGB), perform the alpha blending
-    for c in range(3):
-        roi[:, :, c] = (alpha_foreground * front_img[:, :, c] +
-                        alpha_background * roi[:, :, c])
-
-    # Place the modified ROI back into the original image
-    back_img[y_offset:y_offset+h, x_offset:x_offset+w] = roi
-
-    return back_img
-
-
 
 def load_image(image_path):
     image = Image.open(image_path).convert('RGB')  # Convert image to RGB
@@ -59,48 +28,94 @@ def predict(image_path):
     print("Results object keys and types:", {key: type(value) for key, value in results[0].__dict__.items()})
     return results
 
-# def draw_boxes(image, results):
-#     draw = ImageDraw.Draw(image)
-#     result = results[0]
-#     data = result.boxes.data  # This should contain [x1, y1, x2, y2, conf, cls_id]
 
-#     # Iterate over all detections
-#     for detection in data:
-#         # Extract coordinates and confidence, class directly
-#         x1, y1, x2, y2, conf, cls_id = detection
-#         x1, y1, x2, y2, conf, cls_id = x1.item(), y1.item(), x2.item(), y2.item(), conf.item(), cls_id.item()
+def draw_boxes(image_path, results):
+    original_image = Image.open(image_path)
+    draw = ImageDraw.Draw(original_image)
+    width, height = original_image.size  # Original dimensions
+    result = results[0]
+    data = result.boxes.data
 
-#         # Get class label using class ID
-#         label = f"{result.names[int(cls_id)]} {conf:.2f}"
-#         # Draw rectangle and label on the image
-#         draw.rectangle([x1, y1, x2, y2], outline='red', width=2)
-#         draw.text((x1, y1), label, fill='red')
+    for detection in data:
+        x1, y1, x2, y2, conf, cls_id = detection
+        if conf >= 0.3:
+            # Scale bounding box back to original image size
+            x1 = x1.item() * width / 416
+            y1 = y1.item() * height / 416
+            x2 = x2.item() * width / 416
+            y2 = y2.item() * height / 416
+
+            label = f"{result.names[int(cls_id)]} {conf:.2f}"
+            draw.rectangle([x1, y1, x2, y2], outline='red', width=2)
+            draw.text((x1, y1), label, fill='red')
+
+    # Convert PIL image to a format suitable for OpenCV
+    np_image = np.array(original_image)
+    np_image = cv.cvtColor(np_image, cv.COLOR_RGB2BGR)  # Convert RGB to BGR for OpenCV
+
+    cv.imshow('Detected', np_image)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+# Usage example
+image_path = './dataset_generation/test/santoAmaro.png'
+#image_path = './dataset_generation/train_dataset/000038.jpg'
+results = predict(image_path)
+#image = Image.open(image_path)
+draw_boxes(image_path, results)
+
+
+#-----------------------------------------------------------------------------------------------------#
+#                                                                                                     #
+#                               AQUI FAZ OVERLAY COM A PLACA PARE                                     # 
+##                                                                                                    #
+#-----------------------------------------------------------------------------------------------------
+
+def resize_image(image, width, height):
+    img_pil = Image.fromarray(image)
+    img_pil_resized = img_pil.resize((width, height), Image.Resampling.LANCZOS)  # Updated for newer Pillow versions
+    return np.array(img_pil_resized)
+
+def overlay_transparent(front_img, back_img, x_offset, y_offset):
+    h, w = front_img.shape[:2]
+    if y_offset + h > back_img.shape[0] or x_offset + w > back_img.shape[1]:
+        raise ValueError("The overlay image is too large for the background image at given position")
+    roi = back_img[y_offset:y_offset+h, x_offset:x_offset+w]
+    alpha_foreground = front_img[:, :, 3] / 255.0
+    alpha_background = 1.0 - alpha_foreground
+    for c in range(3):
+        roi[:, :, c] = (alpha_foreground * front_img[:, :, c] +
+                        alpha_background * roi[:, :, c])
+    back_img[y_offset:y_offset+h, x_offset:x_offset+w] = roi
+    return back_img
 
 def draw_boxes_with_overlay(image_path, results, overlay_path):
     image = cv.imread(image_path, cv.IMREAD_COLOR)
-    overlay = cv.imread(overlay_path, cv.IMREAD_UNCHANGED)  # Ensure overlay is loaded with alpha
-
+    original_height, original_width = image.shape[:2]
+    overlay = cv.imread(overlay_path, cv.IMREAD_UNCHANGED)
     result = results[0]
-    data = result.boxes.data  # Contains [x1, y1, x2, y2, conf, cls_id]
-
+    data = result.boxes.data
     for detection in data:
-        x1, y1, x2, y2 = map(int, detection[:4])
-        # Resize overlay image to fit bounding box
-        resized_overlay = cv.resize(overlay, (x2-x1, y2-y1), interpolation=cv.INTER_AREA)
-        # Overlay image within the bounding box
-        image = overlay_transparent(resized_overlay, image, x1, y1)
+        x1, y1, x2, y2, conf, cls_id = detection
+        if conf >= 0.3:  # Check if the detection confidence is high enough
+            # Scale bounding box to original dimensions
+            x1 = int(x1 * original_width / 416)
+            x2 = int(x2 * original_width / 416)
+            y1 = int(y1 * original_height / 416)
+            y2 = int(y2 * original_height / 416)
 
-    cv.imshow('Detected', image)
+            # Resize overlay image to fit bounding box
+            resized_overlay = cv.resize(overlay, (x2 - x1, y2 - y1), interpolation=cv.INTER_AREA)
+            # Overlay image within the bounding box
+            image = overlay_transparent(resized_overlay, image, x1, y1)
+
+    cv.imshow('Detected and overlay', image)
     cv.waitKey(0)
     cv.destroyAllWindows()
     cv.imwrite('output_with_overlay.jpg', image)
 
-
 # Example usage
-image_path = "./dataset_generation/train_dataset/000000.png"
-results = predict(image_path)  # Assuming predict function returns detection results
-# image = Image.open(image_path)
-# image = draw_boxes(image, results)
-# image.show() 
+#image_path = "./dataset_generation/train_dataset/000000.png"
+results = predict(image_path)
 overlay_path = "./TrafficSigns/stop.png"
 draw_boxes_with_overlay(image_path, results, overlay_path)
