@@ -1,0 +1,55 @@
+.App {
+    font-family: sans-serif;
+    padding: 20px;
+  }
+  
+  .VideoInput {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #ddd;
+  }
+  
+  .VideoInput_input {
+    display: none;
+  }
+  
+  .VideoInput_video {
+    display: block;
+    margin: 0;
+  }
+  
+  .VideoInput_footer {
+    background: #eee;
+    width: 100%;
+    min-height: 40px;
+    line-height: 40px;
+    text-align: center;
+  }
+  
+  .container_title {
+    display: flex; /* Enable flexbox for the container */
+  }
+  
+  .title {
+    flex: 0 0 auto; /* Disable automatic sizing and allow shrinking */
+    margin-left: auto; /* Push title to the left */
+    margin-right: 80%; /* Set desired right margin */
+  }
+
+  
+  .container_videos {
+    display: flex;
+    justify-content: center; /* Center elements on the main axis */
+    width: fit-content; /* Set container width to fit content */
+    margin: 0 auto; /* Add margin for centering the container horizontally */
+  }
+  
+  .square {
+    width: 60%; /* Sets the width of each square to 50% */
+    height: 60%; /* Sets the height of each square (adjust as needed) */
+    background-color: blue; /* Example background color (adjust as needed) */
+    margin: 0 10%; /* Margin for spacing between squares and container edges */
+  }
+  
