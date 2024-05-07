@@ -57,12 +57,12 @@ def draw_boxes(image_path, results):
     cv.waitKey(0)
     cv.destroyAllWindows()
 
-# Usage example
-image_path = './dataset_generation/test/santoAmaro.png'
-#image_path = './dataset_generation/train_dataset/000038.jpg'
-results = predict(image_path)
-#image = Image.open(image_path)
-draw_boxes(image_path, results)
+# # Usage example
+# image_path = './dataset_generation/test/santoAmaro.png'
+# #image_path = './dataset_generation/train_dataset/000038.jpg'
+# results = predict(image_path)
+# #image = Image.open(image_path)
+# draw_boxes(image_path, results)
 
 
 #-----------------------------------------------------------------------------------------------------#
@@ -114,8 +114,81 @@ def draw_boxes_with_overlay(image_path, results, overlay_path):
     cv.destroyAllWindows()
     cv.imwrite('output_with_overlay.jpg', image)
 
-# Example usage
-#image_path = "./dataset_generation/train_dataset/000000.png"
-results = predict(image_path)
+# # Example usage
+# #image_path = "./dataset_generation/train_dataset/000000.png"
+# results = predict(image_path)
+# overlay_path = "./TrafficSigns/stop.png"
+# draw_boxes_with_overlay(image_path, results, overlay_path)
+
+
+#-----------------------------------------------------------------------------------------------------#
+#                                          VÍDEO                                                      #
+#                               AQUI FAZ OVERLAY COM A PLACA PARE                                     # 
+##                                                                                                    #
+#-----------------------------------------------------------------------------------------------------
+
+def draw_boxes_with_overlay(frame, results, overlay_path):
+    original_height, original_width = frame.shape[:2]
+    overlay = cv.imread(overlay_path, cv.IMREAD_UNCHANGED)
+    result = results[0]
+    data = result.boxes.data
+    for detection in data:
+        x1, y1, x2, y2, conf, cls_id = detection
+        if conf >= 0.3:  # Check if the detection confidence is high enough
+            print("--------------------------")
+            print("A box was detected")
+            print("x1:", x1, "conf:", conf)
+            print("--------------------------")
+            # Scale bounding box to original dimensions
+            x1 = int(x1 * original_width / 416)
+            x2 = int(x2 * original_width / 416)
+            y1 = int(y1 * original_height / 416)
+            y2 = int(y2 * original_height / 416)
+
+            # Resize overlay image to fit bounding box
+            resized_overlay = cv.resize(overlay, (x2 - x1, y2 - y1), interpolation=cv.INTER_AREA)
+            # Overlay image within the bounding box
+            frame = overlay_transparent(resized_overlay, frame, x1, y1)
+    return frame
+
+def load_image_from_array(frame):
+    # Convert OpenCV frame (BGR) to a PIL Image (RGB)
+    image = Image.fromarray(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
+    transform = transforms.Compose([
+        transforms.Resize((416, 416)),  # Resize to the input size expected by the model
+        transforms.ToTensor(),          # Convert the image to a PyTorch tensor
+    ])
+    image = transform(image).unsqueeze(0)  # Add batch dimension
+    return image
+
+def predict(frame):
+    img = load_image_from_array(frame)
+    with torch.no_grad():  # Turn off gradient computation
+        results = model(img)
+    return results
+
+def video_processing(video_path, overlay_path):
+    cap = cv.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("Error: Could not open video.")
+        return
+    
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            print("Reached end of video or cannot fetch the frame.")
+            break
+        results = predict(frame)
+        frame_with_overlay = draw_boxes_with_overlay(frame, results, overlay_path)
+        
+        cv.imshow('Video with Detection', frame_with_overlay)
+        if cv.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to quit
+            break
+
+    cap.release()
+    cv.destroyAllWindows()
+
+# Example usage for a video file
+video_path = './dataset_generation/test/videos/gaivota2.mp4'
 overlay_path = "./TrafficSigns/stop.png"
-draw_boxes_with_overlay(image_path, results, overlay_path)
+video_processing(video_path, overlay_path)
