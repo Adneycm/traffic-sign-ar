@@ -3,9 +3,9 @@ import shutil
 import os
 import sys
 
-INPUT_DIR = 'dataset_generation/crawled/tree_branchs'
+INPUT_DIR = 'dataset_generation/crawled/mud'
 OUTPUT_BASE = 'dataset_generation/labeled/'
-WINDOW_NAME = 'tree_branchs? (y/*)'
+WINDOW_NAME = 'mud? (y/*)'
 
 MAX_HEIGHT = 500
 MAX_WIDTH = 500
@@ -13,7 +13,7 @@ MAX_WIDTH = 500
 def main():
     cv.namedWindow(WINDOW_NAME)
 
-    output_dir = os.path.join(OUTPUT_BASE, 'tree_branchs')
+    output_dir = os.path.join(OUTPUT_BASE, 'mud')
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

@@ -19,7 +19,7 @@ MAX_WIDTH = 500
 def resize_image(image):
     img_pil = PILImage.fromarray(image)
     img_pil_rgba = img_pil.convert("RGBA")  # Convert to RGBA mode to handle alpha channel
-    img_pil_resized = img_pil_rgba.resize((MAX_WIDTH, MAX_HEIGHT), PILImage.ANTIALIAS)
+    img_pil_resized = img_pil_rgba.resize((MAX_WIDTH, MAX_HEIGHT), PILImage.LANCZOS)
     resized_image = np.array(img_pil_resized)
     return resized_image
 
@@ -29,7 +29,7 @@ def overlay_transparent(img_front, img_back):
         img_front = np.concatenate([img_front, np.ones((img_front.shape[0], img_front.shape[1], 1), dtype=img_front.dtype) * 255], axis=-1)
 
     # Resize the front image to match the size of the back image
-    img_front_pil = Image.fromarray(img_front).resize((img_back.shape[1], img_back.shape[0]), Image.ANTIALIAS).convert("RGBA")
+    img_front_pil = Image.fromarray(img_front).resize((img_back.shape[1], img_back.shape[0]), Image.LANCZOS).convert("RGBA")
     img_back_pil = Image.fromarray(img_back).convert("RGBA")
 
     # Composite the images
@@ -40,8 +40,8 @@ def overlay_transparent(img_front, img_back):
     return overlay
 
 def main():
-    output_img_number = 51
-    rotation_step = 10
+    output_img_number = 7625
+    rotation_step = 90
 
     output_dir = os.path.join(OUTPUT_BASE)
 
